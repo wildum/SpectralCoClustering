@@ -25,7 +25,7 @@ def custom_spectral_custering(A,k):
     R = L.dot(mat_k_eigvects)
 
     #apply k means
-    kmeans = KMeans(n_clusters=5, random_state=0).fit(R)
+    kmeans = KMeans(n_clusters=k, random_state=0).fit(R)
     kmeans_result = kmeans.fit_predict(R)
 
     #matrix of clusters
