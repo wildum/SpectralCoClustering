@@ -11,6 +11,7 @@ import custom_spectral_biclustering as bs
 NB_CLUSTERS = 5
 SIZE = 300
 NOIZE = 5
+K_MEANS_ITERATIONS = 10
 
 #build data
 data_init, rows, columns = make_biclusters(shape=(SIZE, SIZE), n_clusters=NB_CLUSTERS, noise=NOIZE,shuffle=False, random_state=0)
@@ -30,7 +31,7 @@ fit_data = fit_data[:, np.argsort(model.column_labels_)]
 #################################
 
 ######### our algorithm #########
-custom_spectralcoclustering_result, r, c = bs.custom_spectral_biclustering(data, NB_CLUSTERS)
+custom_spectralcoclustering_result, r, c = bs.custom_spectral_biclustering(data, NB_CLUSTERS, K_MEANS_ITERATIONS)
 custom_score = consensus_score((r, c),(rows[:, row_idx], columns[:, col_idx]))
 #################################
 

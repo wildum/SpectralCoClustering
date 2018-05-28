@@ -1,12 +1,14 @@
 from scipy.sparse import csgraph
-from sklearn.cluster import KMeans
 import numpy as np
 import scipy as sp
 import math
 from scipy.sparse.linalg import svds
 from scipy.sparse import dia_matrix
 
+import custom_iterative_k_means as ck
+
 def rearrange(labels, A, k):
+
 	#matrix of clusters
 	clusters = [[] for i in range(k)]
 
@@ -19,8 +21,8 @@ def rearrange(labels, A, k):
 
 	return A_rearranged
 
-
-def custom_spectral_biclustering(A,k):
+#inspired by sklearn library https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/cluster/bicluster.py
+def custom_spectral_biclustering(A, k, k_means_iterations):
 
 	n_rows = len(A)
 	n_cols = len(A[0])
@@ -46,7 +48,7 @@ def custom_spectral_biclustering(A,k):
 	z = np.vstack((row_diag[:, np.newaxis] * u[:, 1:], col_diag[:, np.newaxis] * v.T[:, 1:]))
 
 	#apply k means
-	labels = KMeans(n_clusters=k, random_state=0).fit(z).labels_
+	labels = ck.custom_iterative_kmeans(z, k, k_means_iterations)
 
 	row_labels_ = labels[:n_rows]
 	column_labels_ = labels[n_rows:]
