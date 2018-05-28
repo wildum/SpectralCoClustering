@@ -22,11 +22,9 @@ def custom_spectral_custering(A,k):
     #build matrix of k eigenvectors
     mat_k_eigvects = np.transpose(np.asmatrix(k_eigvects))
 
-    R = L.dot(mat_k_eigvects)
-
     #apply k means
-    kmeans = KMeans(n_clusters=k, random_state=0).fit(R)
-    kmeans_result = kmeans.fit_predict(R)
+    kmeans = KMeans(n_clusters=k, random_state=0).fit(mat_k_eigvects)
+    kmeans_result = kmeans.fit_predict(mat_k_eigvects)
 
     #matrix of clusters
     clusters = [[] for i in range(k)]

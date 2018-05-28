@@ -6,16 +6,25 @@ from sklearn.cluster.bicluster import SpectralCoclustering
 from sklearn.metrics import consensus_score
 
 import custom_spectralclustering as cs
+import custom_spectral_biclustering as bs
 
 
-NB_CLUSTERS = 2
+NB_CLUSTERS = 3
 SIZE = 30
+NOIZE = 0
 
 #build data
-data_init, rows, columns = make_biclusters(shape=(SIZE, SIZE), n_clusters=NB_CLUSTERS, noise=5,shuffle=False, random_state=0)
+data_init, rows, columns = make_biclusters(shape=(SIZE, SIZE), n_clusters=NB_CLUSTERS, noise=NOIZE,shuffle=False, random_state=0)
 
 # we dont want negative data
 data_init = np.absolute(data_init)
+
+# for i in range(len(data_init)):
+#     for j in range(len(data_init)):
+#         if data_init[i][j] > 10:
+#             data_init[i][j] = 1
+#         else:
+#             data_init[i][j] = 0
 
 #shuffle rows and columns!
 data, row_idx, col_idx = sg._shuffle(data_init, random_state=0)
@@ -29,8 +38,7 @@ fit_data = fit_data[:, np.argsort(model.column_labels_)]
 #################################
 
 ######### our algorithm #########
-custom_spectralclustering_result = cs.custom_spectral_custering(data, NB_CLUSTERS)
-custom_spectralcoclustering_result = cs.custom_spectral_custering(np.transpose(custom_spectralclustering_result), NB_CLUSTERS)
+custom_spectralcoclustering_result = bs.custom_spectral_biclustering(data, NB_CLUSTERS)
 #################################
 
 
@@ -45,9 +53,6 @@ plt.title("Shuffled dataset")
 
 plt.matshow(fit_data, cmap=plt.cm.Blues)
 plt.title("After biclustering; rearranged to show biclusters")
-
-plt.matshow(custom_spectralclustering_result, cmap=plt.cm.Blues)
-plt.title("Custom spectral clustering")
 
 plt.matshow(custom_spectralcoclustering_result, cmap=plt.cm.Blues)
 plt.title("Custom spectral coclustering")
