@@ -4,8 +4,9 @@ import numpy as np
 import scipy as sp
 import math
 from scipy.sparse.linalg import svds
+from scipy.sparse import dia_matrix
 
-def rearrange(labels, A):
+def rearrange(labels, A, k):
 	#matrix of clusters
 	clusters = [[] for i in range(k)]
 
@@ -21,40 +22,43 @@ def rearrange(labels, A):
 
 def custom_spectral_biclustering(A,k):
 
-	# #Compute diagonal degree matrix
-	D1 = np.diag(A.sum(axis=0))
-	D2 = np.diag(A.sum(axis=1))
+	n_rows = len(A)
+	n_cols = len(A[0])
 
-	#normalized data matrix --> pb si matrice rect
-	D1_sqt_inv = np.absolute(sp.linalg.sqrtm(np.linalg.inv(D1)))
-	D2_sqt_inv = np.absolute(sp.linalg.sqrtm(np.linalg.inv(D2)))
-	A_norm = D1_sqt_inv.dot(A).dot(D2_sqt_inv)
+	row_diag = np.asarray(1.0 / np.sqrt(A.sum(axis=1))).squeeze()
+	col_diag = np.asarray(1.0 / np.sqrt(A.sum(axis=0))).squeeze()
+
+	#check if there is no nan value because of the division of the previoius operation
+	row_diag = np.where(np.isnan(row_diag), 0, row_diag)
+	col_diag = np.where(np.isnan(col_diag), 0, col_diag)
+
+	# #Compute diagonal degree matrix
+	D1 = dia_matrix((row_diag, [0]), shape=(n_rows, n_rows))
+	D2 = dia_matrix((col_diag, [0]), shape=(n_cols, n_cols))
+
+	A_norm = D1 * A * D2
 
 	num_of_pcs = 1 + int(np.ceil(np.log2(k)))
 
 	#Compute SVD of A_norm
-	u, s, v = svds(A_norm, num_of_pcs)
-	# s = singular values of A_norm (order desc)
-	# u = eigenvectors (column) & v_transpose = eigenvectors(row)
+	u, s, v = svds(A_norm, k=num_of_pcs)
 
-	#pair of eigenvectors corresponding to the k-largest eigenvalue
-
-	z = np.vstack((D1_sqt_inv[:] * u[:, 1:], D2_sqt_inv[:] * v[:, 1:]))
-	# z1 = np.transpose(D1_sqt_inv.dot(np.transpose(u[:][1:num_of_pcs+1])))
-	# z2 = np.transpose(D2_sqt_inv.dot(np.transpose(v[:][1:num_of_pcs+1])))
-
-	#build matrix of k eigenvectors
-	# mat_k_eigvects = np.transpose(np.matrix([z1[0], z2[0]]))
+	z = np.vstack((row_diag[:, np.newaxis] * u[:, 1:], col_diag[:, np.newaxis] * v.T[:, 1:]))
 
 	#apply k means
 	labels = KMeans(n_clusters=k, random_state=0).fit(z).labels_
 
-	row_labels_ = labels[:len(A)]
-	column_labels_ = labels[len(A):]
+	row_labels_ = labels[:n_rows]
+	column_labels_ = labels[n_rows:]
 
-	A_rearranged = rearrange(row_labels_, A)
+	#compute biclusters to calculate consensus score
+	biclusters_rows = np.vstack(row_labels_ == c for c in range(k))
+	biclusters_cols = np.vstack(column_labels_ == c for c in range(k))
+
+	#rearrange rows and cols or data matrix according to the clusters
+	A_rearranged = rearrange(row_labels_, A, k)
 	A_rearranged = np.transpose(A_rearranged)
-	A_rearranged = rearrange(column_labels_, A_rearranged)
+	A_rearranged = rearrange(column_labels_, A_rearranged, k)
 
-	return A_rearranged
+	return np.transpose(A_rearranged), biclusters_rows, biclusters_cols
 	
